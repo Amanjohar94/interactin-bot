@@ -3,3 +3,4 @@ python-dotenv==1.0.0
 Flask==2.3.3
 razorpay==1.4.2
 gunicorn==20.1.0
+Pillow==10.0.0
