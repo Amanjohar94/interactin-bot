@@ -68,8 +68,11 @@ async def main():
     if PUBLIC_GROUP_ID:
         send_promos()
 
-    # Schedule CTA message after 10 seconds
-    application.job_queue.run_once(pin_cta_message, 10)
+
+    # Schedule CTA message after 10 seconds using post_init callback
+    async def on_startup(app):
+        app.job_queue.run_once(pin_cta_message, 10)
+    application.post_init(on_startup)
 
     await application.run_polling()
 
