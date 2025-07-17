@@ -70,7 +70,7 @@ async def main():
 
 
     # Schedule CTA message after 10 seconds using post_init callback
-    async def on_startup(app):
+    def on_startup(app):
         app.job_queue.run_once(pin_cta_message, 10)
     application.post_init(on_startup)
 
