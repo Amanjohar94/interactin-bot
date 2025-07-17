@@ -1,0 +1,11 @@
+# render.yaml for deploying interaction-bot
+services:
+  - type: web
+    name: interaction-bot
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.6
