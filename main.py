@@ -5,7 +5,7 @@ from telegram.ext import (
     MessageHandler,
     CallbackContext,
     ChatJoinRequestHandler,
-    Filters
+    filters
 )
 from telegram import Update, ChatJoinRequest
 from config import BOT_TOKEN, PUBLIC_GROUP_ID
@@ -62,7 +62,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("id", get_chat_id))
     dp.add_handler(ChatJoinRequestHandler(handle_join_request))
-    dp.add_handler(MessageHandler(Filters.private & Filters.text, handle_private_message))
+    dp.add_handler(MessageHandler(filters.PRIVATE & filters.TEXT, handle_private_message))
 
     print("✅ Bot is running...")
     updater.start_polling()
