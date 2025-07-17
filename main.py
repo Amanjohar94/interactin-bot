@@ -56,7 +56,10 @@ async def pin_cta_message(context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Failed to send CTA message: {e}")
 
 async def main():
-    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    def on_startup(app):
+        app.job_queue.run_once(pin_cta_message, 10)
+
+    application = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("id", get_chat_id))
@@ -67,12 +70,6 @@ async def main():
 
     if PUBLIC_GROUP_ID:
         send_promos()
-
-
-    # Schedule CTA message after 10 seconds using post_init callback
-    def on_startup(app):
-        app.job_queue.run_once(pin_cta_message, 10)
-    application.post_init(on_startup)
 
     await application.run_polling()
 
