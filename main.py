@@ -1,9 +1,9 @@
 
 from telegram.ext import (
-    Updater,
+    ApplicationBuilder,
     CommandHandler,
     MessageHandler,
-    CallbackContext,
+    ContextTypes,
     ChatJoinRequestHandler,
     filters
 )
@@ -13,29 +13,29 @@ from promo_scheduler import send_promos
 from payment_flow import handle_private_message
 from bot_core.utils.promo_texts import PROMO_WELCOME, PROMO_JOIN, PROMO_CTA
 
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     if args and args[0] == "vip":
-        handle_private_message(update, context)
+        await handle_private_message(update, context)
     else:
-        update.message.reply_text(
+        await update.message.reply_text(
             PROMO_WELCOME,
             parse_mode='HTML',
             disable_web_page_preview=True
         )
 
-def get_chat_id(update: Update, context: CallbackContext):
+async def get_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    update.message.reply_text(f"✅ This chat ID is:\n{chat_id}")
+    await update.message.reply_text(f"✅ This chat ID is:\n{chat_id}")
 
-def handle_join_request(update: Update, context: CallbackContext):
+async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     join_request: ChatJoinRequest = update.chat_join_request
     try:
-        context.bot.approve_chat_join_request(
+        await context.bot.approve_chat_join_request(
             chat_id=join_request.chat.id,
             user_id=join_request.from_user.id
         )
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=join_request.from_user.id,
             text=PROMO_JOIN,
             parse_mode='HTML',
@@ -44,9 +44,9 @@ def handle_join_request(update: Update, context: CallbackContext):
     except Exception as e:
         print(f"❌ Error approving user: {e}")
 
-def pin_cta_message(context: CallbackContext):
+async def pin_cta_message(context: ContextTypes.DEFAULT_TYPE):
     try:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=PUBLIC_GROUP_ID,
             text=PROMO_CTA,
             parse_mode='HTML',
@@ -55,23 +55,24 @@ def pin_cta_message(context: CallbackContext):
     except Exception as e:
         print(f"❌ Failed to send CTA message: {e}")
 
-def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+async def main():
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("id", get_chat_id))
-    dp.add_handler(ChatJoinRequestHandler(handle_join_request))
-    dp.add_handler(MessageHandler(filters.PRIVATE & filters.TEXT, handle_private_message))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("id", get_chat_id))
+    application.add_handler(ChatJoinRequestHandler(handle_join_request))
+    application.add_handler(MessageHandler(filters.PRIVATE & filters.TEXT, handle_private_message))
 
     print("✅ Bot is running...")
-    updater.start_polling()
 
     if PUBLIC_GROUP_ID:
         send_promos()
 
-    updater.job_queue.run_once(pin_cta_message, 10)
-    updater.idle()
+    # Schedule CTA message after 10 seconds
+    application.job_queue.run_once(pin_cta_message, 10)
 
+    await application.run_polling()
+
+import asyncio
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
