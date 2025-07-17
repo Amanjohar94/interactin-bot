@@ -61,7 +61,7 @@ async def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("id", get_chat_id))
     application.add_handler(ChatJoinRequestHandler(handle_join_request))
-    application.add_handler(MessageHandler(filters.PRIVATE & filters.TEXT, handle_private_message))
+    application.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.TEXT, handle_private_message))
 
     print("✅ Bot is running...")
 
