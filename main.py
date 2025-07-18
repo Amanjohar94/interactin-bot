@@ -79,9 +79,7 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except RuntimeError as e:
-        if "event loop" in str(e):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(main())
+        if "Cannot close a running event loop" in str(e):
+            pass  # PTB manages the event loop, safe to ignore
         else:
             raise

@@ -12,10 +12,12 @@ messages = [
     "🔥 Missed 3 wins today?\nDon’t miss the next.\n[Join Now](https://t.me/tradejoinbot)"
 ]
 
-def send_promos(index=0):
+import asyncio
+
+async def send_promos(index=0):
     try:
         message = messages[index % len(messages)]
-        bot.send_message(
+        await bot.send_message(
             chat_id=PUBLIC_GROUP_ID,
             text=message,
             parse_mode="Markdown",
@@ -26,4 +28,4 @@ def send_promos(index=0):
         print(f"❌ Failed to send promo: {e}")
 
     # Send every 3 hours (10800 sec)
-    threading.Timer(10800, send_promos, args=[index + 1]).start()
+    asyncio.get_event_loop().call_later(10800, lambda: asyncio.create_task(send_promos(index + 1)))
