@@ -69,7 +69,7 @@ async def main():
     print("✅ Bot is running...")
 
     if PUBLIC_GROUP_ID:
-        send_promos()
+        await send_promos()
 
     await application.run_polling()
 
