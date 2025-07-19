@@ -63,7 +63,7 @@ async def main():
     def on_startup(app):
         app.job_queue.run_once(pin_cta_message, 10)
         if PUBLIC_GROUP_ID:
-            app.job_queue.run_repeating(promo_job, interval=10800, first=0)
+            app.job_queue.run_repeating(promo_job, interval=10800, first=0, run_async=True)
 
     application = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
 
