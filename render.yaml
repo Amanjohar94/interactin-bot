@@ -1,11 +1,20 @@
-# render.yaml for deploying interaction-bot
 services:
   - type: web
     name: interaction-bot
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python main.py"
+    startCommand: "gunicorn webhook_server:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.6
+      - key: BOT_TOKEN
+        value: your_bot_token
+      - key: PUBLIC_GROUP_ID
+        value: your_public_group_id
+      - key: VIP_GROUP_ID
+        value: your_vip_group_id
+      - key: RAZORPAY_KEY_ID
+        value: your_razorpay_key_id
+      - key: RAZORPAY_KEY_SECRET
+        value: your_razorpay_key_secret

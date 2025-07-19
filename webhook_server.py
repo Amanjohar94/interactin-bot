@@ -1,31 +1,62 @@
-from flask import Flask, request
+from flask import Flask, request, abort
 import razorpay
+import hmac
+import hashlib
+import os
+import logging
 from telegram import Bot
-from config import BOT_TOKEN, VIP_GROUP_ID, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
 
+# Flask app instance
 app = Flask(__name__)
+
+# Telegram bot config
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+VIP_GROUP_ID = int(os.getenv("VIP_GROUP_ID", "-100xxxxxxxxxx"))  # Replace default if needed
 bot = Bot(token=BOT_TOKEN)
+
+# Razorpay client config
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# Logging
+logging.basicConfig(level=logging.INFO)
+
+@app.route("/", methods=["GET"])
+def index():
+    return "Webhook Server is Live!", 200
 
 @app.route("/razorpay-webhook", methods=["POST"])
 def razorpay_webhook():
-    payload = request.get_data(as_text=True)
-    signature = request.headers.get("X-Razorpay-Signature")
-
     try:
-        client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-        client.utility.verify_webhook_signature(payload, signature, RAZORPAY_KEY_SECRET)
+        payload = request.data
+        received_signature = request.headers.get("X-Razorpay-Signature")
+        secret = RAZORPAY_KEY_SECRET.encode()
+
+        # Verify signature
+        expected_signature = hmac.new(secret, payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_signature, received_signature):
+            logging.warning("Webhook signature verification failed.")
+            abort(400)
 
         data = request.json
-        entity = data.get("payload", {}).get("payment_link", {}).get("entity", {})
-        telegram_user_id = int(entity.get("notes", {}).get("telegram_user_id"))
+        logging.info(f"Webhook received: {data}")
 
-        bot.invite_chat_member(chat_id=VIP_GROUP_ID, user_id=telegram_user_id)
-        bot.send_message(chat_id=telegram_user_id, text="✅ Payment confirmed! You’ve been added to VIP 🚀")
+        if data.get("event") == "payment.captured":
+            email = data["payload"]["payment"]["entity"].get("email")
+            if email:
+                message = f"✅ Payment received from {email}. You’ve been granted VIP access!"
+            else:
+                message = f"✅ Payment captured! You’ve been granted VIP access."
 
-        return "OK", 200
+            # Send message to VIP group (or use add_chat_member if needed)
+            bot.send_message(chat_id=VIP_GROUP_ID, text=message)
+
+        return "", 200
+
     except Exception as e:
-        print(f"❌ Webhook error: {e}")
-        return "Error", 400
+        logging.error(f"Webhook error: {e}")
+        abort(500)
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(debug=True)
