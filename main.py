@@ -58,6 +58,8 @@ async def pin_cta_message(context: ContextTypes.DEFAULT_TYPE):
 async def main():
     def on_startup(app):
         app.job_queue.run_once(pin_cta_message, 10)
+        if PUBLIC_GROUP_ID:
+            app.job_queue.run_repeating(lambda ctx: asyncio.create_task(send_promos()), interval=10800, first=0)
 
     application = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
 
@@ -67,9 +69,6 @@ async def main():
     application.add_handler(MessageHandler(filters.ChatType.PRIVATE & filters.TEXT, handle_private_message))
 
     print("✅ Bot is running...")
-
-    if PUBLIC_GROUP_ID:
-        await send_promos()
 
     await application.run_polling()
 
