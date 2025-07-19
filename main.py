@@ -10,6 +10,10 @@ from telegram.ext import (
 from telegram import Update, ChatJoinRequest
 from config import BOT_TOKEN, PUBLIC_GROUP_ID
 from promo_scheduler import send_promos
+from telegram.ext import CallbackContext
+
+async def promo_job(context: CallbackContext):
+    await send_promos()
 from payment_flow import handle_private_message
 from bot_core.utils.promo_texts import PROMO_WELCOME, PROMO_JOIN, PROMO_CTA
 
@@ -59,7 +63,7 @@ async def main():
     def on_startup(app):
         app.job_queue.run_once(pin_cta_message, 10)
         if PUBLIC_GROUP_ID:
-            app.job_queue.run_repeating(lambda ctx: asyncio.create_task(send_promos()), interval=10800, first=0)
+            app.job_queue.run_repeating(promo_job, interval=10800, first=0)
 
     application = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
 
